@@ -58,3 +58,43 @@ ProyectoFinal/
 │   ├── App.js                # Configuración principal y navegación (Stack y Bottom Tabs)
 │   └── package.json
 └── README.md
+
+---
+
+## Instalación y Puesta en Marcha
+
+### 1. Requisitos previos
+* Node.js (v18 o superior)
+* MySQL Server (v8.0 o superior)
+* Expo CLI / Navegador web o app Expo Go
+
+### 2. Configuración de la Base de Datos
+1. Crear la base de datos en MySQL: `CREATE DATABASE eventme_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
+2. Ejecutar el script SQL con la creación de las tablas `usuarios`, `eventos`, `favoritos`, `tickets` y `mensajes`.
+
+### 3. Arranque del Backend (`eventme-backend`)
+1. Instalar dependencias: `cd eventme-backend && npm install`
+2. Crear un archivo `.env` en la raíz de `eventme-backend` con las variables `PORT=3000`, `DB_HOST=localhost`, `DB_USER=root`, `DB_PASSWORD`, `DB_NAME=eventme_db` y `JWT_SECRET`.
+3. Iniciar el servidor: `node index.js`
+
+### 4. Arranque del Frontend (`eventme-frontend`)
+1. Instalar dependencias: `cd eventme-frontend && npm install`
+2. Iniciar la aplicación: `npx expo start`
+3. Pulsar `w` para abrir la versión web en el navegador o escanear el código QR con **Expo Go** en dispositivo móvil.
+
+---
+
+## Endpoints Principales de la API REST
+
+| Método | Endpoint | Acceso | Descripción |
+| :--- | :--- | :---: | :--- |
+| `POST` | `/api/auth/register` | Público | Registro de nuevo usuario con cifrado `bcrypt` |
+| `POST` | `/api/auth/login` | Público | Autenticación y emisión de token `JWT` |
+| `GET` | `/api/eventos` | Público | Listado completo del catálogo de eventos |
+| `GET` | `/api/favoritos` | Privado | Obtiene los eventos guardados por el usuario autenticado |
+| `POST` | `/api/favoritos/toggle` | Privado | Añade o elimina un evento de la lista de favoritos |
+| `GET` | `/api/tickets/evento/:id` | Privado | Lista las entradas disponibles para un evento concreto |
+| `POST` | `/api/tickets` | Privado | Publica una entrada verificando `precio_reventa <= precio_original` |
+| `PATCH` | `/api/tickets/:id/comprar` | Privado | Compra atómica de entrada con control de concurrencia (`409 Conflict`) |
+| `GET` | `/api/tickets/mis-publicaciones` | Privado | Historial de entradas publicadas por el usuario (`INNER JOIN`) |
+| `GET` | `/api/tickets/mis-compras` | Privado | Historial de entradas adquiridas con datos del vendedor |
