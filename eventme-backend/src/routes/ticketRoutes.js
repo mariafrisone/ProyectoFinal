@@ -13,5 +13,6 @@ router.get('/evento/:eventoId', ticketController.obtenerTicketsPorEvento);
 //RUTAS PROTEGIDAS: PARA CREAR Y COMPRAR
 router.post('/', authMiddleware, ticketController.publicarTicket);
 router.patch('/:ticketId/comprar', authMiddleware, ticketController.comprarTicket);
+router.post('/validar-qr', authMiddleware, ticketController.validarTicketQR);
 
 module.exports = router;

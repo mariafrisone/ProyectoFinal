@@ -15,6 +15,10 @@ import FavoriteScreens from "./src/screens/FavoriteScreens";
 import MyTicketsScreen from './src/screens/MyTicketsScreen';
 import EventDetailScreen from './src/screens/EventDetailScreen';
 import ChatScreen from './src/screens/ChatScreen';
+import QRScannerScreen from './src/screens/QRScannerScreen';
+import ChatsListScreen from './src/screens/ChatsListScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
+
 
 
 const Stack = createNativeStackNavigator();
@@ -35,21 +39,27 @@ function MainTabs(){
         tabBarActiveTintColor: COLORS.brandGreen,
         tabBarInactiveTintColor: COLORS.textSecondary,
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName = 'calendar-outline';
-          if(route.name === 'Eventos'){
-            iconName = focused ? 'calendar' : 'calendar-outline';
+          let iconName = 'home-outline';
+          if(route.name === 'Home'){
+            iconName = focused ? 'home' : 'home-outline';
           }else if (route.name === 'Favoritos') {
             iconName = focused ? 'heart' : 'heart-outline';
-          }else if(route.name === 'Mis Entradas') {
+          }else if(route.name === 'Tickets') {
             iconName = focused ? 'ticket' : 'ticket-outline';
+          }else if(route.name === 'ChatsTab') {
+            iconName = focused ? 'chatbubble' : 'chatbubble-outline';
+          }else if(route.name === 'Ajustes') {
+            iconName = focused ? 'settings' : 'settings-outline';
           }
           return <Ionicons name={iconName} size={size} color={color}/>;
         },
       })}
       >
-        <Tab.Screen name='Eventos' component={HomeScreen}/>
+        <Tab.Screen name='Home' component={HomeScreen}/>
         <Tab.Screen name='Favoritos' component={FavoriteScreens}/>
-        <Tab.Screen name='Mis Entradas' component={MyTicketsScreen}/>
+        <Tab.Screen name='Tickets' component={MyTicketsScreen}/>
+        <Tab.Screen name='ChatsTab' component={ChatsListScreen} options={{tabBarLabel: 'Chat'}}/>
+        <Tab.Screen name='Ajustes' component={SettingsScreen}/>
       </Tab.Navigator>
   );
 }
@@ -72,6 +82,7 @@ function AppRoutes() {
         <Stack.Screen name ="MainTabs" component={MainTabs}/>
         <Stack.Screen name="EventDetail" component={EventDetailScreen}/>
         <Stack.Screen name="Chat" component={ChatScreen}/>
+        <Stack.Screen name="QRScanner" component={QRScannerScreen}/>
         </>
       ) : (
         <>

@@ -100,7 +100,7 @@ export default function LoginScreen({navigation}){
                 <View style={styles.trustRow}>
                     <View style={styles.trustItem}>
                         <Ionicons name="lock-closed" size={16} color={COLORS.brandGreen}></Ionicons>
-                        <Text style={styles.trustText}>Secure & encripted</Text>
+                        <Text style={styles.trustText}>Secure & encrypted</Text>
                     </View>
                     <View style={styles.trustItem}>
                         <Ionicons name="headset-outline" size={16} color={COLORS.textSecondary}></Ionicons>

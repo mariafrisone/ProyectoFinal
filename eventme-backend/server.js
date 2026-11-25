@@ -21,6 +21,6 @@ const io = new Server(server, {
 require('./src/sockets/chatSocket')(io);
 
 //LEVANTAR EL SERVIDOR
-server.listen(PORT, () =>{
+server.listen(PORT, '0.0.0.0',() =>{
     console.log(`🚀 Servidor EventMe corriendo en http://localhost:${PORT}`);
 });

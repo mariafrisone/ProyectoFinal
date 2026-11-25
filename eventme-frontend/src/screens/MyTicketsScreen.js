@@ -6,18 +6,21 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import QRCode from 'react-native-qrcode-svg';
 import { apiRequest } from '../api/client';
 import { COLORS } from '../theme/colors';
 
-export default function MyTicketsScreen() {
+export default function MyTicketsScreen({navigation}) {
   const [tabActiva, setTabActiva] = useState('compras');
   const [compras, setCompras] = useState([]);
   const [publicaciones, setPublicaciones] = useState([]);
   const [cargando, setCargando] = useState(true);
+  const [ticketQR, setTicketQR] = useState(null);
 
   const cargarTickets = async () => {
     try {
@@ -50,12 +53,14 @@ export default function MyTicketsScreen() {
     });
   };
 
-  const renderCompra = ({ item }) => (
+  const renderCompra = ({ item }) => {
+    const yaValidada = item.validado === 1;
+    return(
     <View style={styles.ticketCard}>
       <View style={styles.ticketTop}>
         <Text style={styles.eventoNombre}>{item.evento_nombre}</Text>
-        <View style={styles.badgeComprada}>
-          <Text style={styles.badgeCompradaText}>ADQUIRIDA</Text>
+        <View style={[styles.badgeComprada, yaValidada && styles.badgeValidada,]}>
+          <Text style={[styles.badgeCompradaText, yaValidada && styles.badgeValidadaText,]}>{yaValidada ? 'VALIDADA' : 'ADQUIRIDA'}</Text>
         </View>
       </View>
 
@@ -70,8 +75,16 @@ export default function MyTicketsScreen() {
         <Text style={styles.vendedorText}>Vendedor: {item.vendedor_nombre}</Text>
         <Text style={styles.precioText}>{item.precio_pagado} €</Text>
       </View>
+
+      {item.codigo_qr && (
+        <TouchableOpacity style={styles.qrBtn} onPress={() => setTicketQR(item)}>
+          <Ionicons name='qr-code-outline' size={18} color={COLORS.textPrimary}/>
+          <Text style={styles.qrBtnText}>Ver código QR de acceso</Text>
+        </TouchableOpacity> 
+      )}
     </View>
   );
+  };
 
   const renderPublicacion = ({ item }) => {
     const vendida = item.estado === 'vendido';
@@ -114,10 +127,19 @@ export default function MyTicketsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>Mis Entradas</Text>
-      <Text style={styles.headerSubtitle}>
-        Historial de compras y publicaciones FairTicket
-      </Text>
+      <View style={styles.headerRow}>
+        <View style= {{flex: 1}}>
+          <Text style={styles.headerTitle}>Mis Entradas</Text>
+          <Text style={styles.headerSubtitle}>
+            Historial de compras y publicaciones FairTicket
+          </Text>
+        </View>
+
+        <TouchableOpacity style={styles.scanBtn} onPress={() => navigation.navigate('QRScanner')}>
+          <Ionicons name='scan-outline' size={20} color={COLORS.textPrimary}/>
+          <Text style={styles.scanBtnText}>Validar</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* Selector Compradas / En venta */}
       <View style={styles.switchRow}>
@@ -184,6 +206,30 @@ export default function MyTicketsScreen() {
           }
         />
       )}
+
+      {/*Modal con el código qr*/}
+      <Modal visible={!!ticketQR} transparent animationType='fade' onRequestClose={() => setTicketQR(null)}>
+        <View style={styles.modalOverly}>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>{ticketQR?.evento_nombre}</Text>
+            <Text style={styles.modalSubtitle}>{ticketQR?.asiento_zona || 'Entrada General'}</Text>
+
+            <View style={styles.qrBox}>{ticketQR?.codigo_qr && (
+              <QRCode value={ticketQR.codigo_qr} size={200}/>
+            )}</View>
+
+            <Text style={styles.qrCodeText}>{ticketQR?.codigo_qr}</Text>
+
+            <Text style={[styles.modalStatus, {color: ticketQR?.validado === 1 ? COLORS.danger : COLORS.brandGreen,},]}>
+              {ticketQR?.validado === 1 ? '⚠️ Esta entrada ya fue validada' : '✅ Entrada lista para escanear en puerta'}
+            </Text>
+
+            <TouchableOpacity style={styles.closeBtn} onPress={() => setTicketQR(null)}>
+              <Text style={styles.closeBtnText}>Cerrar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -198,12 +244,10 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 10,
   },
   headerSubtitle: {
     color: COLORS.textSecondary,
     fontSize: 13,
-    marginBottom: 14,
   },
   switchRow: {
     flexDirection: 'row',
@@ -262,6 +306,12 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
+  badgeValidada: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+  },
+  badgeValidadaText: {
+    color: COLORS.danger,
+  },
   badgeEstado: {
     paddingHorizontal: 8,
     paddingVertical: 3,
@@ -305,6 +355,77 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'bold',
   },
+  qrBtn: {
+    marginTop: 12,
+    backgroundColor: COLORS.brandGreen,
+    borderRadius: 10,
+    paddingVertical: 10,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap:8,
+  },
+  qrBtnText: {
+    color: COLORS.textPrimary,
+    fontWeight: 'bold',
+    fontSize: 13,
+  },
+  modalOverly: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 340,
+    backgroundColor: COLORS.cardDark,
+    borderRadius: 20,
+    padding: 22,
+    alignItems: 'center',
+  },
+  modalTitle: {
+    color: COLORS.textLight,
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 18,
+  },
+  qrBox: {
+    backgroundColor: '#ffffff',
+    padding: 16,
+    borderRadius: 14,
+  },
+  qrCodeText: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    marginTop: 12,
+    letterSpacing: 1,
+  },
+  modalStatus: {
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  closeBtn: {
+    marginTop: 18,
+    backgroundColor: COLORS.brandBlue,
+    paddingVertical: 10,
+    paddingHorizontal: 32,
+    borderRadius: 10,
+  },
+  closeBtnText: {
+    color: COLORS.textPrimary,
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -316,5 +437,26 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 14,
     textAlign: 'center',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  scanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.brandBlue,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    gap: 6,
+  },
+  scanBtnText: {
+    color: COLORS.textPrimary,
+    fontWeight: 'bold',
+    fontSize: 13,
   },
 });

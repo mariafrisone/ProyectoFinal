@@ -1,4 +1,4 @@
-const historialPorEvento = {}
+const historialPorEvento = {};
 
 module.exports = (io) => {
     io.on('connection', (socket) => {
@@ -14,17 +14,25 @@ module.exports = (io) => {
         });
 
         //Recibir y retransmitir mensajes en tiempo real dentro de la sala
-        socket.on('send_message', ({eventoId, usuarioId, usuarioNombre, texto}) => {
-            if(!texto || !texto.trim()) return;
+        socket.on('send_message', ({eventoId, usuarioId, usuarioNombre, texto, latitud, longitud}) => {
+            console.log('📩 Llegó al backend:', {eventoId, texto, latitud, longitud});
+            const tieneTexto = texto && texto.trim().length > 0;
+            const tieneUbicacion = latitud != null && longitud != null;
+
+            if(!tieneTexto && !tieneUbicacion) return;
 
             const room = `evento_${eventoId}`;
+            socket.join(room);
+
             const nuevoMensaje = {
                 id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
                 eventoId,
                 usuarioId,
                 usuarioNombre: usuarioNombre || 'Asistente',
-                texto: texto.trim(),
-                hora: new Date().toLocaleDateString('es-ES', {
+                texto: tieneTexto ? texto.trim(): '📍 Ubicación compartida',
+                latitud: tieneUbicacion ? latitud: null,
+                longitud: tieneUbicacion ? longitud: null,
+                hora: new Date().toLocaleTimeString('es-ES', {
                     hour: '2-digit',
                     minute: '2-digit',
                 }),
@@ -38,6 +46,7 @@ module.exports = (io) => {
             if (historialPorEvento[room].lenght > 100) {
                 historialPorEvento[room].shift();
             }
+            console.log('🚀 Reenviando mensaje a la sala:', room);
             io.to(room).emit('receive_message', nuevoMensaje);
         });
 

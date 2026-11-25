@@ -1,6 +1,7 @@
 import React, {createContext, useState, useEffect} from "react";
 import { Platform } from "react-native";
 import { apiRequest, saveToken, removeToken } from "../api/client";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const AuthContext = createContext();
 

@@ -1,4 +1,6 @@
+const { error } = require('console');
 const db = require ('../config/db');
+const crypto = require('crypto');
 
 //1 OBTENER TODOS LOS TICKETS DISPONIBLES PARA UN EVENTO ESPECIFICO
 exports.obtenerTicketsPorEvento = async (req, res) => {
@@ -97,7 +99,7 @@ exports.obtenerMisTickets = async (req, res) => {
     }
 };
 
-//4. COMPRAR/RESERVAR UN TICKET (CAMBIA ESTADO A VENDIDO Y ASIGNA COMPRADOR)
+//4. COMPRAR/RESERVAR UN TICKET (CAMBIA ESTADO A VENDIDO, ASIGNA COMPRADOR Y GENERA QR)
 exports.comprarTicket = async (req, res) => {
     const compradorId = req.user.id;
     const { ticketId } = req.params;
@@ -105,7 +107,7 @@ exports.comprarTicket = async (req, res) => {
     try {
         //1. VERIFICAR SI EL TICKET EXISTE Y ESTA DISPONIBLE
         const [tickets] = await db.query(
-            'SELECT id, vendedor_id, estado FROM tickets WHERE id = ?',
+            'SELECT id, evento_id, vendedor_id, estado FROM tickets WHERE id = ?',
             [ticketId]
         );
 
@@ -124,15 +126,19 @@ exports.comprarTicket = async (req, res) => {
             return res.status(409).json({ error: 'Este ticket ya no se encuentra disponible para la venta' });
         }
 
-        //4. ACTUALIZAR EL ESTADO A 'VENDIDO'
+        //4. GENERAR CÓDIGO QR Y ACTUALIZAR EL ESTADO A 'VENDIDO'
+        const sufijo = crypto.randomBytes(3).toString('hex').toUpperCase();
+        const codigoQr = `EVT-${ticket.evento_id}-CMP-${compradorId}-${sufijo}`;
+
         await db.query(
-            'UPDATE tickets SET estado = ?, comprador_id = ? WHERE id = ?',
-            ['vendido', compradorId, ticketId]
+            'UPDATE tickets SET estado = ?, comprador_id = ?, codigo_qr = ?, validado = 0 WHERE id = ?',
+            ['vendido', compradorId, codigoQr, ticketId]
         );
 
         return res.status(200).json({
-            message: '¡Compra realizada con éxito! El ticket ahora está marcado como vendido',
-            ticketId: ticket.id
+            message: '¡Compra realizada con éxito! Tu código QR ya está disponible',
+            ticketId: ticket.id,
+            codigo_qr: codigoQr
         });
     }catch(error){
         console.error('Error al procesar la compra del ticket:', error);
@@ -165,14 +171,14 @@ exports.obtenerMisPublicaciones = async (req, res) => {
         return res.status(500).json({ error: 'Error interno del servidor al consultar tus publicaciones' });
     }
 };
-//OBTENER LOS TICKETS QUE EL USUARIO AUTENTICADO HA COMPRADO
+//OBTENER LOS TICKETS QUE EL USUARIO AUTENTICADO HA COMPRADO (CON SU QR)
 exports.obtenerMisCompras = async (req, res) => {
     const usuarioId = req.user.id;
 
     try{
         const querySQL = `
         SELECT t.id, t.precio_reventa AS precio_pagado, t.asiento_zona,
-               t.descripcion, t.creado_en,
+               t.descripcion, t.creado_en, t.codigo_qr, t.validado, t.fecha_validacion,
                e.titulo AS evento_nombre, e.fecha_evento, e.recinto AS evento_lugar,
                u.nombre AS vendedor_nombre, u.email AS vendedor_email
         FROM tickets t
@@ -190,5 +196,55 @@ exports.obtenerMisCompras = async (req, res) => {
     }catch(error){
         console.error('Error al obtener mis compras:', error);
         return res.status(500).json({ error: 'Error interno del servidor al consultar tus compras'});
+    }
+};
+
+//VALIDAR UN TICKET MEDIANTE SU CÓDIGO QR
+exports.validarTicketQR = async (req, res) => {
+    const { codigo_qr } = req.body;
+
+    if (!codigo_qr) {
+        return res.status(400).json({ error: 'No se recibió ningún código QR' });
+    }
+    try{
+        const[tickets] = await db.query(
+            `SELECT t.id, t.estado, t.validado, t.fecha_validacion, t.asiento_zona,
+                    e.titulo AS evento_nombre,
+                    u.nombre AS comprador_nombre
+            FROM tickets t
+            INNER JOIN eventos e ON t.evento_id = e.id
+            LEFT JOIN usuarios u ON t.comprador_id = u.id
+            WHERE t.codigo_qr =?`,
+            [codigo_qr]
+        );
+
+        if (tickets.length === 0) {
+            return res.status(400).json({
+                valido: false,
+                error: 'Código QR no reconocido. Entrada falsa o inexistente.'
+            });        
+        }
+        const ticket = tickets[0];
+
+        if (ticket.validado === 1) {
+            return res.status(409).json({
+                valido: false,
+                error: 'Esta entrada ya fue escaneada anteriormente.',
+                fecha_validacion: ticket.fecha_validacion,
+                ticket
+            });
+        }
+        await db.query(
+            'UPDATE tickets SET validado = 1, fecha_validacion = NOW() WHERE id = ?',
+            [ticket.id]
+        );
+        return res.status(200).json({
+            valido: true,
+            message: '✅ Entrada válida. Acceso permitido.',
+            ticket
+        });
+    }catch(error){
+        console.error('error al validar el código QR:', error);
+        return res.status(500).json({ error: 'Error interno al validar el código QR' });
     }
 };
