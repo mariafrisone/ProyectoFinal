@@ -22,7 +22,7 @@ Además de la exploración de eventos y la coordinación en tiempo real mediante
 * **Chat en Tiempo Real (R03):** Salas de mensajería instantánea vinculadas a cada evento mediante WebSockets (`Socket.io`) para organizar puntos de encuentro.
 * **Módulo FairTicket Anti-Especulación (R04):** Publicación de entradas sobrantes con validación algorítmica en el servidor que rechaza cualquier intento de reventa por encima del valor nominal original (`400 Bad Request`).
 * **Compra Atómica y Control de Concurrencia (R05):** Adquisición segura de entradas con transición de estado (`disponible` → `vendido`), bloqueo de auto-compra y protección frente a condiciones de carrera (`409 Conflict`).
-* **Validación Presencial por Código QR (R06):** Generación de código QR único por entrada adquirida y escáner integrado para verificar su autenticidad durante el encuentro entre comprador y vendedor, marcando el ticket como validado (`validado = 1`) con registro de fecha y hora en base de datos.
+* **Validación Presencial por Código QR (R05F02):** Generación de código QR único por entrada adquirida y escáner integrado para verificar su autenticidad durante el encuentro entre comprador y vendedor, marcando el ticket como validado (`validado = 1`) con registro de fecha y hora en base de datos.
 
 ---
 
