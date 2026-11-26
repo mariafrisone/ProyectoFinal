@@ -43,20 +43,23 @@ El sistema sigue una arquitectura cliente-servidor desacoplada en tres capas:
 ProyectoFinal/
 ├── eventme-backend/          # Servidor Node.js + Express + Socket.io
 │   ├── src/
-│   │   ├── config/           # Conexión a base de datos MySQL
+│   │   ├── config/           # Conexión a base de datos MySQL (db.js)
 │   │   ├── controllers/      # Lógica de negocio (auth, eventos, favoritos, tickets)
-│   │   ├── middlewares/      # Verificación de token JWT
+│   │   ├── middlewares/      # Verificación de token JWT (authMiddleware.js)
 │   │   ├── routes/           # Definición de endpoints REST (/api/...)
-│   │   └── sockets/          # Gestión de eventos y salas en tiempo real (Socket.io)
-│   ├── app.js                # Punto de entrada del servidor HTTP y WebSockets
+│   │   └── sockets/          # Gestión de salas y chat en tiempo real (chatSocket.js)
+│   ├── app.js                # Configuración de Express, middlewares y rutas
+│   ├── server.js             # Punto de entrada del servidor HTTP y WebSockets
 │   └── package.json
 ├── eventme-frontend/         # Aplicación móvil/web en React Native + Expo
+│   ├── assets/               # Recursos gráficos e iconos
 │   ├── src/
-│   │   ├── api/              # Cliente HTTP centralizado (apiRequest)
-│   │   ├── context/          # Gestión de sesión (AuthContext)
-│   │   ├── screens/          # Pantallas (Login, Register, Home, Detail, Favoritos, Tickets, Chat)
+│   │   ├── api/              # Cliente HTTP centralizado (client.js)
+│   │   ├── context/          # Gestión de sesión (AuthContext.js)
+│   │   ├── screens/          # Pantallas (Login, Register, Home, EventDetail, Favoritos, MyTickets, QRScanner, Chat, ChatsList, Settings)
 │   │   └── theme/            # Paleta de colores corporativa (colors.js)
 │   ├── App.js                # Configuración principal y navegación (Stack y Bottom Tabs)
+│   ├── index.js              # Registro de entrada de Expo
 │   └── package.json
 ├── eventme_db.sql            # Script SQL completo (esquema + datos de prueba)
 └── README.md
